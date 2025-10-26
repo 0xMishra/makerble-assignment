@@ -1,4 +1,4 @@
-module github.com/0xMishra/goAPI
+module github.com/0xMishra/makerble
 
 go 1.24.0
 

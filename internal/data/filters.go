@@ -3,7 +3,7 @@ package data
 import (
 	"strings"
 
-	"github.com/0xMishra/goAPI/internal/validator"
+	"github.com/0xMishra/makerble/internal/validator"
 )
 
 type Metadata struct {

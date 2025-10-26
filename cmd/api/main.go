@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/0xMishra/goAPI/internal/data"
+	"github.com/0xMishra/makerble/internal/data"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )

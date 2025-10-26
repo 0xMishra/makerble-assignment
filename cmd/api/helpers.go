@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/0xMishra/goAPI/internal/validator"
+	"github.com/0xMishra/makerble/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
