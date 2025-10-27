@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/0xMishra/makerble/internal/validator"
 	"github.com/julienschmidt/httprouter"
@@ -145,4 +146,14 @@ func (app *application) background(fn func()) {
 		// Execute the arbitrary function that we passed as the parameter.
 		fn()
 	}()
+}
+
+func (app *application) parseShiftTiming(shift string) time.Time {
+	t, err := time.Parse("15:04", shift)
+	if err != nil {
+		fmt.Println("Error parsing time:", err)
+		return time.Time{}
+	}
+
+	return t
 }

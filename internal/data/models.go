@@ -1,3 +1,4 @@
+// Package data provides data models used by the API
 package data
 
 import (
@@ -10,8 +11,18 @@ var (
 	ErrEditConflict   = errors.New("edit conflict")
 )
 
-type Models struct{}
+type Models struct {
+	Receptionists ReceptionistModel
+	Tokens        TokenModel
+}
 
 func NewModels(db *sql.DB) Models {
-	return Models{}
+	return Models{
+		Receptionists: ReceptionistModel{
+			DB: db,
+		},
+		Tokens: TokenModel{
+			DB: db,
+		},
+	}
 }

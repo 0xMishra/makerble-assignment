@@ -1,6 +1,6 @@
-# Project name
+# Makerble assignment
 
-A golang API server boilerplate
+Assignment for makerble internship
 
 ## Getting Started
 

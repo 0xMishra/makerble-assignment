@@ -19,6 +19,7 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/receptionists/register", app.registerReceptionistHandler)
 
 	return app.recoverPanic(app.enableCORS(app.rateLimit(router)))
 }
