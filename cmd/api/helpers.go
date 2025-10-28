@@ -148,12 +148,12 @@ func (app *application) background(fn func()) {
 	}()
 }
 
-func (app *application) parseShiftTiming(shift string) time.Time {
+func (app *application) parseShiftTiming(shift string) (time.Time, error) {
 	t, err := time.Parse("15:04", shift)
 	if err != nil {
 		fmt.Println("Error parsing time:", err)
-		return time.Time{}
+		return time.Time{}, err
 	}
 
-	return t
+	return t, nil
 }

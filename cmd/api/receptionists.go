@@ -24,8 +24,17 @@ func (app *application) registerReceptionistHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	sStart := app.parseShiftTiming(input.ShiftStart)
-	sEnd := app.parseShiftTiming(input.ShiftEnd)
+	sStart, err := app.parseShiftTiming(input.ShiftStart)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	sEnd, err := app.parseShiftTiming(input.ShiftEnd)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	rec := &data.Receptionist{
 		Name:       input.Name,

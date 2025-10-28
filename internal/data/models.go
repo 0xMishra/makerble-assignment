@@ -14,6 +14,8 @@ var (
 type Models struct {
 	Receptionists ReceptionistModel
 	Tokens        TokenModel
+	Patients      PatientModel
+	Doctors       DoctorModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -22,6 +24,12 @@ func NewModels(db *sql.DB) Models {
 			DB: db,
 		},
 		Tokens: TokenModel{
+			DB: db,
+		},
+		Patients: PatientModel{
+			DB: db,
+		},
+		Doctors: DoctorModel{
 			DB: db,
 		},
 	}
