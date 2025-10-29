@@ -19,7 +19,12 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/receptionists/register", app.registerReceptionistHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/register", app.registerReceptionistHandler)
+
+	router.HandlerFunc(http.MethodPost, "/v1/patients/", app.addPatientHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/patients/", app.getPatientHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/patients/:id", app.updatePatientHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/patients/:id", app.deletePatientHandler)
 
 	return app.recoverPanic(app.enableCORS(app.rateLimit(router)))
 }

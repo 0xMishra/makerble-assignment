@@ -2,8 +2,12 @@
 package validator
 
 import (
+	"errors"
 	"regexp"
 	"slices"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 var EmailRX = regexp.MustCompile(
@@ -50,4 +54,51 @@ func Unique[T comparable](values []T) bool {
 		uniqueValues[value] = true
 	}
 	return len(values) == len(uniqueValues)
+}
+
+type Password struct {
+	Plaintext *string
+	Hash      []byte
+}
+
+func (p *Password) Set(plaintextPassword string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), 12)
+	if err != nil {
+		return err
+	}
+
+	p.Plaintext = &plaintextPassword
+	p.Hash = hash
+
+	return nil
+}
+
+func (p *Password) Matches(plaintextPassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(p.Hash), []byte(plaintextPassword))
+	if err != nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			return false, nil
+
+		default:
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func ValidateEmail(v *Validator, email string) {
+	v.Check(email != "", "email", "must be provided")
+	v.Check(Matches(email, EmailRX), "email", "must be a valid email address")
+}
+
+func ValidatePlaintextPassword(v *Validator, plaintext string) {
+	v.Check(plaintext != "", "password", "must be provided")
+	v.Check(len(plaintext) >= 8, "password", "must be at least 8 bytes long")
+	v.Check(len(plaintext) <= 72, "password", "must be at most 72 bytes long")
+}
+
+func ValidateShift(v *Validator, shiftStart, shiftEnd time.Time) {
+	v.Check(shiftEnd.After(shiftStart), "shift", "shift timing should be valid")
 }
