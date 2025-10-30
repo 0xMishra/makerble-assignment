@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base32"
+	"errors"
 	"time"
 
 	"github.com/0xMishra/makerble/internal/validator"
@@ -19,14 +20,16 @@ const (
 type Token struct {
 	Plaintext string    `json:"token"`
 	Hash      []byte    `json:"-"`
-	UserID    int64     `json:"-"`
+	Email     string    `json:"email"`
+	Role      string    `json:"role"`
 	Expiry    time.Time `json:"expiry"`
 	Scope     string    `json:"-"`
 }
 
-func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error) {
+func generateToken(ttl time.Duration, email, role, scope string) (*Token, error) {
 	token := &Token{
-		UserID: userID,
+		Email:  email,
+		Role:   role,
 		Expiry: time.Now().Add(ttl),
 		Scope:  scope,
 	}
@@ -57,8 +60,8 @@ type TokenModel struct {
 	DB *sql.DB
 }
 
-func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
-	token, err := generateToken(userID, ttl, scope)
+func (m TokenModel) New(ttl time.Duration, email, role, scope string) (*Token, error) {
+	token, err := generateToken(ttl, email, role, scope)
 	if err != nil {
 		return nil, err
 	}
@@ -68,11 +71,11 @@ func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, 
 
 func (m TokenModel) Insert(token *Token) error {
 	query := `
-		INSERT INTO tokens (hash, user_id, expiry, scope)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO tokens (hash, email, role, expiry, scope)
+		VALUES ($1, $2, $3, $4, $5)
 	`
 
-	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope}
+	args := []any{token.Hash, token.Email, token.Role, token.Expiry, token.Scope}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -81,16 +84,44 @@ func (m TokenModel) Insert(token *Token) error {
 	return err
 }
 
-func (m TokenModel) DeleteAllForUser(scope string, userID int64) error {
+func (m TokenModel) DeleteAllForUser(scope string, email string) error {
 	query := `
 		DELETE FROM tokens
-		WHERE scope = $1 AND user_id = $2
+		WHERE scope = $1 AND email = $2
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := m.DB.ExecContext(ctx, query, scope, userID)
+	_, err := m.DB.ExecContext(ctx, query, scope, email)
 
 	return err
+}
+
+func (m TokenModel) GetUserForToken(token string) (*Token, error) {
+	query := `
+		SELECT email, role, expiry FROM tokens
+		WHERE token = $1
+	`
+
+	var t Token
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, token).Scan(
+		&t.Email,
+		&t.Role,
+		&t.Expiry,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+
+		default:
+			return nil, err
+		}
+	}
+
+	return &t, nil
 }

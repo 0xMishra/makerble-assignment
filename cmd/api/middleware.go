@@ -1,12 +1,16 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/0xMishra/makerble/internal/data"
+	"github.com/0xMishra/makerble/internal/validator"
 	"golang.org/x/time/rate"
 )
 
@@ -113,16 +117,10 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 			for i := range app.config.cors.trustedOrigins {
 				if origin == app.config.cors.trustedOrigins[i] {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
-					// Check if the request has the HTTP method OPTIONS and contains the
-					// "Access-Control-Request-Method" header. If it does, then we treat
-					// it as a preflight request.
+
 					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
-						// Set the necessary preflight response headers, as discussed
-						// previously.
 						w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE")
 						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-						// Write the headers along with a 200 OK status and return from
-						// the middleware with no further action.
 						w.WriteHeader(http.StatusOK)
 						return
 					}
@@ -133,4 +131,52 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (app *application) authenticate(role1, role2 string, next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			bearerToken := r.Header.Get("Authorization")
+			sliceToken := strings.Split(bearerToken, " ")
+			token := sliceToken[1]
+
+			v := validator.New()
+
+			if sliceToken[0] != "Bearer" {
+				app.invalidAuthenticationTokenResponse(w, r)
+				return
+			}
+
+			if data.ValidateTokenPlaintext(v, token); !v.Valid() {
+				app.failedValidationResponse(w, r, v.Errors)
+				return
+			}
+
+			var t *data.Token
+			t, err := app.models.Tokens.GetUserForToken(token)
+			if err != nil {
+				switch {
+				case errors.Is(err, data.ErrRecordNotFound):
+					app.invalidAuthenticationTokenResponse(w, r)
+
+				default:
+					app.serverErrorResponse(w, r, err)
+				}
+				return
+			}
+
+			if t.Role != role1 && t.Role != role2 {
+				app.invalidCredentialsResponse(w, r)
+				return
+			}
+
+			err = app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, t.Email)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		},
+	)
 }

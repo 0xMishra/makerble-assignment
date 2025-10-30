@@ -68,7 +68,7 @@ func (app *application) registerReceptionistHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	token, err := app.models.Tokens.New(rec.ID, 3*24*time.Hour, data.ScopeAuthentication)
+	token, err := app.models.Tokens.New(3*24*time.Hour, rec.Email, "receptionist", data.ScopeAuthentication)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

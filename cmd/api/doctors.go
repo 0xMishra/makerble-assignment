@@ -72,7 +72,7 @@ func (app *application) registerDoctorHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	token, err := app.models.Tokens.New(d.ID, 3*24*time.Hour, data.ScopeAuthentication)
+	token, err := app.models.Tokens.New(3*24*time.Hour, d.Email, "doctor", data.ScopeAuthentication)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
