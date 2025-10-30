@@ -47,7 +47,7 @@ func (m PatientModel) Insert(p *Patient) error {
 	query := `
 		INSERT INTO patients (name, gender, age, contact, address, medical_history, insurance_info, last_visit, doctor_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, created_id, version
+		RETURNING id, created_at, version
 	`
 
 	args := []any{
@@ -85,7 +85,7 @@ func (m PatientModel) Insert(p *Patient) error {
 
 func (m PatientModel) GetByID(id int64) (*Patient, error) {
 	query := `
-		SELECT id, created_at, name, gender, age, contact, address, medical_history, insurance_info, last_visit, doctor_id
+		SELECT id, created_at, name, gender, age, contact, address, medical_history, insurance_info, last_visit, doctor_id, version
 		FROM patients
 		WHERE id = $1
 	`
@@ -94,6 +94,8 @@ func (m PatientModel) GetByID(id int64) (*Patient, error) {
 	defer cancel()
 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&p.ID,
+		&p.CreatedAt,
 		&p.Name,
 		&p.Gender,
 		&p.Age,
@@ -103,6 +105,7 @@ func (m PatientModel) GetByID(id int64) (*Patient, error) {
 		&p.InsuranceInfo,
 		&p.LastVisit,
 		&p.DoctorID,
+		&p.Version,
 	)
 	if err != nil {
 		switch {
@@ -114,7 +117,7 @@ func (m PatientModel) GetByID(id int64) (*Patient, error) {
 		}
 	}
 
-	return nil, nil
+	return &p, nil
 }
 
 func (m PatientModel) Update(p *Patient) error {
@@ -135,6 +138,8 @@ func (m PatientModel) Update(p *Patient) error {
 		p.InsuranceInfo,
 		p.LastVisit,
 		p.DoctorID,
+		p.ID,
+		p.Version,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/0xMishra/makerble/internal/validator"
@@ -30,7 +31,7 @@ func ValidateDoctor(v *validator.Validator, d *Doctor) {
 	v.Check(d.Name != "", "name", "must be provided")
 	v.Check(len(d.Name) <= 500, "name", "name must be at most 500 bytes long")
 	v.Check(len(d.Specialization) >= 4, "specialization", "doctor must have some specialization")
-	v.Check(d.Contact >= 10, "contact", "doctor's contact number should be at least 10 digits long")
+	v.Check(math.Floor(math.Log10(math.Abs(float64(d.Contact))))+1 == 10, "contact", "doctor's contact number should be at least 10 digits long")
 
 	validator.ValidateEmail(v, d.Email)
 	validator.ValidateShift(v, d.ShiftStart, d.ShiftEnd)

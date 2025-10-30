@@ -170,10 +170,14 @@ func (app *application) authenticate(role1, role2 string, next http.HandlerFunc)
 				return
 			}
 
-			err = app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, t.Email)
-			if err != nil {
-				app.serverErrorResponse(w, r, err)
-				return
+			currentTime := time.Now()
+
+			if currentTime.After(t.Expiry) {
+				err = app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, t.Email)
+				if err != nil {
+					app.serverErrorResponse(w, r, err)
+					return
+				}
 			}
 
 			next.ServeHTTP(w, r)

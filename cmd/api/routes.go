@@ -22,7 +22,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/register", app.registerHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/patients", app.authenticate("receptionist", "", app.addPatientHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/patients", app.authenticate("receptionist", "", app.getPatientHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/patients/:id", app.authenticate("receptionist", "doctor", app.getPatientHandler))
 	router.HandlerFunc(http.MethodPut, "/v1/patients/:id", app.authenticate("receptionist", "doctor", app.updatePatientHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/patients/:id", app.authenticate("receptionist", "", app.deletePatientHandler))
 

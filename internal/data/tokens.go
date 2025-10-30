@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/base32"
 	"errors"
@@ -18,12 +17,11 @@ const (
 )
 
 type Token struct {
-	Plaintext string    `json:"token"`
-	Hash      []byte    `json:"-"`
-	Email     string    `json:"email"`
-	Role      string    `json:"role"`
-	Expiry    time.Time `json:"expiry"`
-	Scope     string    `json:"-"`
+	Hash   string    `json:"token"`
+	Email  string    `json:"email"`
+	Role   string    `json:"role"`
+	Expiry time.Time `json:"expiry"`
+	Scope  string    `json:"-"`
 }
 
 func generateToken(ttl time.Duration, email, role, scope string) (*Token, error) {
@@ -34,7 +32,7 @@ func generateToken(ttl time.Duration, email, role, scope string) (*Token, error)
 		Scope:  scope,
 	}
 
-	randomBytes := make([]byte, 16)
+	randomBytes := make([]byte, 26)
 
 	// filling this []byte slice with random entries
 	_, err := rand.Read(randomBytes)
@@ -43,17 +41,14 @@ func generateToken(ttl time.Duration, email, role, scope string) (*Token, error)
 	}
 
 	// padding is = at the end of the token that we are avoiding here
-	token.Plaintext = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
-
-	hash := sha256.Sum256([]byte(token.Plaintext))
-	token.Hash = hash[:] // token.Hash is array and that's not acceptable to the pq driver that's why converting to slice
+	token.Hash = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
 
 	return token, nil
 }
 
 func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 	v.Check(tokenPlaintext != "", "token", "must be provided")
-	v.Check(len(tokenPlaintext) == 26, "token", "must be 26 bytes long")
+	v.Check(len(tokenPlaintext) == 42, "token", "must be 42 bytes long")
 }
 
 type TokenModel struct {
@@ -98,17 +93,17 @@ func (m TokenModel) DeleteAllForUser(scope string, email string) error {
 	return err
 }
 
-func (m TokenModel) GetUserForToken(token string) (*Token, error) {
+func (m TokenModel) GetUserForToken(hash string) (*Token, error) {
 	query := `
 		SELECT email, role, expiry FROM tokens
-		WHERE token = $1
+		WHERE hash = $1
 	`
 
 	var t Token
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, token).Scan(
+	err := m.DB.QueryRowContext(ctx, query, hash).Scan(
 		&t.Email,
 		&t.Role,
 		&t.Expiry,

@@ -42,6 +42,7 @@ func (app *application) registerDoctorHandler(w http.ResponseWriter, r *http.Req
 		Name:           input.Name,
 		Email:          input.Email,
 		Specialization: input.Specialization,
+		Contact:        input.Contact,
 		ShiftStart:     sStart,
 		ShiftEnd:       sEnd,
 	}
@@ -78,7 +79,30 @@ func (app *application) registerDoctorHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"doctor": d, "token": token}, nil)
+	type formattedDoctor struct {
+		ID             int64
+		CreatedAt      time.Time
+		Name           string
+		Email          string
+		Specialization string
+		Contact        int64
+		ShiftStart     string
+		ShiftEnd       string
+	}
+
+	f := formattedDoctor{
+		ID:             d.ID,
+		CreatedAt:      d.CreatedAt,
+		Name:           d.Name,
+		Email:          d.Email,
+		Specialization: d.Specialization,
+		Contact:        d.Contact,
+	}
+
+	f.ShiftStart = d.ShiftStart.Format("3:04 PM")
+	f.ShiftEnd = d.ShiftEnd.Format("3:04 PM")
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"doctor": f, "token": token}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

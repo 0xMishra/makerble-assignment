@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS patients (
   insurance_info text NOT NULL,
   last_visit time NOT NULL,
   version integer NOT NULL DEFAULT 1,
-  doctor_id bigint NOT NULL REFERENCES doctors
+  doctor_id bigint NOT NULL
 );

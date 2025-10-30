@@ -74,7 +74,26 @@ func (app *application) registerReceptionistHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"receptionist": rec, "token": token}, nil)
+	type formattedReceptionist struct {
+		ID         int64
+		CreatedAt  time.Time
+		Name       string
+		Email      string
+		ShiftStart string
+		ShiftEnd   string
+	}
+
+	f := formattedReceptionist{
+		ID:        rec.ID,
+		CreatedAt: rec.CreatedAt,
+		Name:      rec.Name,
+		Email:     rec.Email,
+	}
+
+	f.ShiftStart = rec.ShiftStart.Format("3:04 PM")
+	f.ShiftEnd = rec.ShiftEnd.Format("3:04 PM")
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"receptionist": f, "token": token}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
